@@ -1,0 +1,11 @@
+package com.chen.bos.service;
+
+import com.chen.bos.entity.User;
+
+public interface UserService {
+
+	User login(User model);
+
+	void modifyPwd(String id, String password);
+
+}

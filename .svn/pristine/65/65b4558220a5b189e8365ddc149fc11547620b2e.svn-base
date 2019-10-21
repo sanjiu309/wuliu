@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+    "http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+	<!-- 配置常量 -->
+	<!-- 字符集 -->
+	<constant name="struts.i18n.encoding" value="UTF-8"></constant>
+	<!-- 开发模式 -->
+	<constant name="struts.devMode" value="true"></constant>
+	<!-- 主题 -->
+	<constant name="struts.ui.theme" value="simple"></constant>
+
+	<!-- 通用package -->
+	<package name="customer" namespace="/" extends="struts-default">
+	
+		<interceptors>
+			<!-- 注入自定义拦截器 -->
+			<interceptor name="LoginInterceptor" class="com.chen.bos.interceptor.LoginInterceptor">
+				<param name="excludeMethods">login,regist</param>
+			</interceptor>
+			<!-- 自定义拦截器栈 -->
+			<interceptor-stack name="myStack">
+				<interceptor-ref name="LoginInterceptor"></interceptor-ref>
+				<interceptor-ref name="defaultStack"></interceptor-ref>
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="myStack"></default-interceptor-ref>
+		
+		<global-results>
+			<result name="login" type="redirect">/login.jsp</result>
+		</global-results>
+		
+		<action name="UserAction_*" class="userAction" method="{1}">
+			<result name="login">/login.jsp</result>
+			<result name="toHome" type="redirect">/index.jsp</result>
+		</action>
+		
+		<action name="StaffAction_*" class="staffAction" method="{1}">
+			<!-- <result name="toList">/WEB-INF/pages/base/staff.jsp</result> -->
+			<result name="toList" type="redirectAction">
+				<param name="namespace">/</param>
+				<param name="actionName">page_base_staff</param>
+			</result>
+		</action>
+		
+		<action name="RegionAction_*" class="regionAction" method="{1}">
+			
+		</action>
+		
+		<action name="SubareaAction_*" class="subareaAction" method="{1}">
+			<result name="toList">/WEB-INF/pages/base/subarea.jsp</result>
+		</action>
+		
+		<action name="DecidedzoneAction_*" class="decidedzoneAction" method="{1}">
+			<result name="list">/WEB-INF/pages/base/decidedzone.jsp</result>
+		</action>
+		
+		<action name="NoticebillAction_*" class="noticebillAction" method="{1}">
+			<result name="noticebill_add">/WEB-INF/pages/qupai/noticebill_add.jsp</result>
+		</action>
+		
+		<action name="WorkordermanageAction_*" class="workordermanageAction" method="{1}">
+			
+		</action>
+		
+		<!-- 访问受保护的web-inf中的页面,page_base_staff直接访问ActionSupport下的execute方法了-->
+		<action name="page_*_*">
+			<result>/WEB-INF/pages/{1}/{2}.jsp</result>
+		</action>
+
+	</package>
+</struts>

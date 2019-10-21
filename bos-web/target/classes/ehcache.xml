@@ -1,0 +1,22 @@
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../config/ehcache.xsd">
+
+    <diskStore path="java.io.tmpdir"/>
+	
+	<!-- 内存中最多存储的Java对象数，是否会到时自动销毁，多长时间不使用清理
+		存活多长时间，超过内存存储数量是否存储到硬盘，硬盘最多存储数
+		服务器重启后数据是否还要，隔多长时间开启线程查询数据是否有需要清理的
+		最近一段时间最少使用优先清理
+		cache重新认证就算没有到达2分钟还是会清理
+	 -->
+    <defaultCache
+            maxElementsInMemory="10000"
+            eternal="false"
+            timeToIdleSeconds="120"
+            timeToLiveSeconds="120"
+            overflowToDisk="true"
+            maxElementsOnDisk="10000000"
+            diskPersistent="false"
+            diskExpiryThreadIntervalSeconds="120"
+            memoryStoreEvictionPolicy="LRU"
+            />
+</ehcache>

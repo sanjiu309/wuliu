@@ -1,0 +1,142 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xmlns:soap="http://cxf.apache.org/bindings/soap"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context.xsd 
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop.xsd 
+	http://www.springframework.org/schema/tx  
+	http://www.springframework.org/schema/tx/spring-tx.xsd
+	http://cxf.apache.org/bindings/soap 
+	http://cxf.apache.org/schemas/configuration/soap.xsd
+	http://cxf.apache.org/jaxws 
+	http://cxf.apache.org/schemas/jaxws.xsd">
+
+	<!-- 配置shiro的过滤器对象工厂 -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<!-- 注入安全管理器 -->
+		<property name="securityManager" ref="securityManager"></property>
+		<!-- 注入相关页面访问url -->
+		<property name="loginUrl" value="/login.jsp"></property>
+		<property name="successUrl" value="/index.jsp"></property>
+		<property name="unauthorizedUrl" value="/unauthorized.jsp"></property>
+		<!-- 注入url拦截规则 -->
+		<property name="filterChainDefinitions">
+			<value>
+				/css/**=anon
+				/js/**=anon
+				/images/**=anon
+				/validatecode.jsp*=anon
+				/login.jsp=anon
+				/UserAction_login=anon
+				/page_base_region=perms["region_list"]
+				/**=authc
+			</value>
+		</property>
+	</bean>
+	<!-- 注册安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="bosRealm"></property>
+		<property name="cacheManager" ref="cacheManager"></property>
+	</bean>
+	<!-- 注册缓存管理器 -->
+	<bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+		<!-- 注入配置文件 -->
+		<property name="cacheManagerConfigFile" value="classpath:ehcache.xml"></property>
+	</bean>
+	<!-- 注册realm -->
+	<bean id="bosRealm" class="com.chen.bos.realm.BosRealm"></bean>
+	<!-- 开启shiro注解 -->
+	<bean id="defaultAdvisorAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator">
+		<!-- 必须使用cglib方式为action来创建代理对象 -->
+		<property name="proxyTargetClass" value="true"></property>
+	</bean>
+	<!-- 配置shiro框架提供的切面类(通知'事务'+切点'哪些方法')，用于创建代理对象 -->
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor"></bean>
+	
+	
+	<!-- 自定义定时作业类 -->
+	<bean id="myJob" class="com.chen.bos.jobs.MailJob">
+		<property name="username" value="chenxinhui309@163.com"></property>
+		<property name="password" value="cxh309"></property>
+		<property name="smtpServer" value="smtp.163.com"></property>
+	</bean>
+	<!-- 配置quartz -->
+	<!-- JobDetail任务详情 -->
+	<bean id="jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- 注入目标方法 -->
+		<property name="targetObject" ref="myJob"></property>
+		<!-- 注入目标方法 -->
+		<property name="targetMethod" value="run"></property>
+	</bean>
+	<!-- 配置触发器 -->
+	<bean id="myTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="jobDetail"></property>
+		<!-- 注入cron表达式，通过表达式指定触发的时间点 -->
+		<property name="cronExpression">
+			<value>0/5 * * * * ? 2019</value>
+		</property>
+	</bean>
+	<!-- 配置调度工厂 -->
+	<bean id="schedulerFactoryBean" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="myTrigger"/>
+			</list>
+		</property>
+	</bean>
+	
+	
+	
+	<context:property-placeholder location="classpath:db.properties"/>
+	
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+		<property name="user" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+	</bean>
+	
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 注入hibernate配置信息 -->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+			<prop key="hibernate.show_sql">true</prop>
+			<prop key="hibernate.format_sql">true</prop>
+			<prop key="hibernate.hbm2ddl.auto">update</prop>
+			</props>
+		</property>
+		<!-- hibernate映射文件 -->
+		<property name="mappingLocations" value="classpath:com/chen/bos/entity/*.xml"></property>
+	</bean>
+	
+	<!-- 事务 -->
+	<bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	<tx:annotation-driven/>
+	
+	<!-- 组件扫描并开启spring注解 -->
+	<context:component-scan base-package="com.chen.bos"></context:component-scan>
+	
+	<context:annotation-config/>
+	
+	
+	
+	
+	
+	
+	
+	<!-- 注册crm服务 -->
+	<jaxws:client id="crm" serviceClass="com.chen.crm.CustomerService" 
+	address="http://192.168.1.106:8080/crmService/service/customer"></jaxws:client>
+	
+</beans>

@@ -1,0 +1,27 @@
+package com.chen.bos.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.chen.bos.dao.UserDao;
+import com.chen.bos.entity.User;
+import com.chen.bos.service.UserService;
+import com.chen.bos.utils.MD5Utils;
+@Service
+public class UserServiceImpl implements UserService {
+
+	@Autowired
+	private UserDao dao;
+	
+	public User login(User model) {
+		User user = dao.findByUsername(model.getUsername());
+		if(user==null){
+			return null;
+		}
+		if(!MD5Utils.md5(model.getPassword()).equals(user.getPassword())){
+			return null;
+		}
+		return user;
+	}
+
+}
